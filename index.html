@@ -1279,7 +1279,9 @@ function syncZoomToItem() {
   const idx = viewer.item?.index ?? viewer.item;
   const items = viewer.items || [];
   const current = idx != null ? items[idx] : null;
-  const isModel = current?.type === 'model' || !!viewer.modelViewer;
+  const isModel = current?.type === 'model' ||
+    current?.tagName?.toLowerCase?.() === 'cylindo-model' ||
+    current?.element?.tagName?.toLowerCase?.() === 'cylindo-model';
 
   const controls = (viewer.getAttribute('controls') || '').split(/\s+/).filter(Boolean);
 
