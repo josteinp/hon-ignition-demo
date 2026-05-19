@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HON Ignition Task 2.0 — Configure Your Chair</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://content.cylindo.com" crossorigin />
+  <script type="module" src="https://viewer-cdn.cylindo.com/v1/index.mjs" async></script>
+
+  <style>
+    /* ── Design tokens ───────────────────────────────────────── */
+    :root {
+      --black:   #1a1a1a;
+      --dark:    #2d2d2d;
+      --mid:     #666;
+      --muted:   #999;
+      --border:  #e2e2e2;
+      --surface: #f5f5f5;
+      --white:   #fff;
+      --red:     #cc0000;   /* HON primary red */
+      --panel-w: 400px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--white);
+      color: var(--dark);
+      overflow-x: hidden;
+    }
+
+    /* ── Top navigation ──────────────────────────────────────── */
+    .site-nav {
+      background: var(--black);
+      height: 56px;
+      display: flex;
+      align-items: center;
+      padding: 0 40px;
+      gap: 40px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+
+    .logo-text {
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 3px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+      margin-left: 16px;
+    }
+
+    .nav-links a {
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+
+    .nav-links a:hover { color: #fff; }
+
+    .nav-right {
+      margin-left: auto;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .nav-cta {
+      background: var(--red);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 8px 18px;
+      text-decoration: none;
+      transition: background .2s;
+    }
+
+    .nav-cta:hover { background: #aa0000; }
+
+    /* ── Breadcrumb ──────────────────────────────────────────── */
+    .breadcrumb {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 40px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .breadcrumb a {
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .breadcrumb a:hover { color: var(--dark); }
+
+    .breadcrumb-sep { color: var(--border); }
+
+    .breadcrumb-current { color: var(--dark); font-weight: 600; }
+
+    /* ── Main layout ─────────────────────────────────────────── */
+    .configurator {
+      display: grid;
+      grid-template-columns: 1fr var(--panel-w);
+      height: calc(100vh - 87px);
+    }
+
+    /* ── Viewer column ───────────────────────────────────────── */
+    .viewer-col {
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+      overflow: hidden;
+    }
+
+    /* ── Cylindo viewer ──────────────────────────────────────── */
+    .viewer-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fafafa;
+      position: relative;
+      overflow: hidden;
+    }
+
+    cylindo-viewer {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .viewer-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fafafa;
+      z-index: 10;
+      transition: opacity .4s;
+    }
+
+    .viewer-loading.hidden { opacity: 0; pointer-events: none; }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--black);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Config panel ────────────────────────────────────────── */
+    .config-panel {
+      border-left: 1px solid var(--border);
+      background: var(--white);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .config-head {
+      padding: 16px 24px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--white);
+      flex-shrink: 0;
+    }
+
+    .config-head-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .config-head h1 {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -.3px;
+      color: var(--black);
+      line-height: 1.2;
+    }
+
+    .config-head-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* ── Download dropdown ───────────────────────────────────── */
+    .dl-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .dl-trigger {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--black);
+      color: #fff;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 8px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s;
+    }
+
+    .dl-trigger:hover { background: #333; }
+
+    .dl-trigger svg {
+      width: 13px;
+      height: 13px;
+      stroke: #fff;
+      stroke-width: 2;
+      fill: none;
+      flex-shrink: 0;
+      transition: transform .2s;
+    }
+
+    .dl-trigger.open svg.chevron { transform: rotate(180deg); }
+
+    .dl-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      width: 220px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+      z-index: 100;
+    }
+
+    .dl-menu.open { display: block; }
+
+    .dl-menu-section {
+      padding: 12px 14px 10px;
+    }
+
+    .dl-menu-section + .dl-menu-section {
+      border-top: 1px solid var(--border);
+    }
+
+    .dl-menu-label {
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .dl-menu-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .dl-menu-grid.three-col {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .dl-menu-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--dark);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      padding: 7px 6px;
+      cursor: pointer;
+      border-radius: 2px;
+      text-align: center;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+
+    .dl-menu-btn:hover {
+      background: var(--black);
+      border-color: var(--black);
+      color: #fff;
+    }
+
+    .dl-menu-btn.red {
+      background: #fdf0f0;
+      border-color: #f0c0c0;
+      color: var(--red);
+    }
+
+    .dl-menu-btn.red:hover {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+    }
+
+    .config-body {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .config-body::-webkit-scrollbar { width: 4px; }
+    .config-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── Section headers ─────────────────────────────────────── */
+    .section-header {
+      padding: 8px 24px 4px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-header-text {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── Accordion ───────────────────────────────────────────── */
+    .accordion {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .accordion-trigger {
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      text-align: left;
+      gap: 12px;
+    }
+
+    .accordion-trigger:hover { background: var(--surface); }
+
+    .accordion-trigger-left { flex: 1; min-width: 0; }
+
+    .accordion-name {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--black);
+    }
+
+    .accordion-value {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 500;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .accordion-arrow {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .25s;
+    }
+
+    .accordion-arrow svg {
+      width: 12px;
+      height: 12px;
+      stroke: var(--muted);
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .accordion.open .accordion-arrow { transform: rotate(180deg); }
+
+    .accordion-body {
+      display: none;
+      padding: 12px 24px 16px;
+      background: var(--white);
+    }
+
+    .accordion.open .accordion-body { display: block; }
+
+    /* ── Swatch grid (material options) ──────────────────────── */
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .swatch-item {
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .swatch-square {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 3px;
+      border: 2px solid transparent;
+      transition: border-color .15s, transform .1s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .swatch-item:hover .swatch-square {
+      border-color: var(--mid);
+      transform: scale(1.04);
+    }
+
+    .swatch-item.selected .swatch-square {
+      border-color: var(--black);
+      box-shadow: 0 0 0 1px var(--black);
+    }
+
+    .swatch-check {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 14px;
+      height: 14px;
+      background: var(--black);
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .swatch-item.selected .swatch-check { display: flex; }
+
+    .swatch-check svg {
+      width: 8px;
+      height: 8px;
+      stroke: #fff;
+      stroke-width: 2.5;
+      fill: none;
+    }
+
+    .swatch-label {
+      font-size: 8px;
+      font-weight: 600;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.2;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+    }
+
+    /* ── Thumbnail grid (structural options) ─────────────────── */
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .thumb-item {
+      cursor: pointer;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--surface);
+      transition: border-color .15s;
+      position: relative;
+    }
+
+    .thumb-item:hover { border-color: var(--mid); }
+
+    .thumb-item.selected {
+      border-color: var(--black);
+    }
+
+    .thumb-selected-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 18px;
+      height: 18px;
+      background: var(--black);
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .thumb-item.selected .thumb-selected-badge { display: flex; }
+
+    .thumb-selected-badge svg {
+      width: 10px;
+      height: 10px;
+      stroke: #fff;
+      stroke-width: 2.5;
+      fill: none;
+    }
+
+    .thumb-img {
+      width: 100%;
+      aspect-ratio: 1;
+      display: block;
+      object-fit: contain;
+      background: #f0f0f0;
+    }
+
+    .thumb-img-placeholder {
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+    }
+
+    .thumb-label {
+      padding: 7px 8px;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      color: var(--dark);
+      text-align: center;
+      background: var(--white);
+      border-top: 1px solid var(--border);
+      line-height: 1.3;
+    }
+
+    /* ── Config footer ───────────────────────────────────────── */
+    .config-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--white);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--black);
+      color: #fff;
+      border: none;
+      width: 100%;
+      padding: 13px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .btn-primary:hover { background: #333; }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--black);
+      border: 2px solid var(--black);
+      width: 100%;
+      padding: 11px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+    }
+
+    .btn-outline:hover { background: var(--black); color: #fff; }
+
+    /* ── Download modal / toast ──────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--black);
+      color: #fff;
+      padding: 12px 20px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 3px;
+      z-index: 9999;
+      transform: translateY(60px);
+      opacity: 0;
+      transition: transform .3s, opacity .3s;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .configurator { grid-template-columns: 1fr; grid-template-rows: 50vh 1fr; height: auto; }
+      .config-panel { max-height: 60vh; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════ NAVIGATION ════════════════════ -->
+<nav class="site-nav">
+  <a class="logo" href="#">
+    <div class="logo-mark">H</div>
+    <span class="logo-text">HON</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#">Seating</a></li>
+    <li><a href="#">Tables</a></li>
+    <li><a href="#">Storage</a></li>
+    <li><a href="#">Desks</a></li>
+    <li><a href="#">Resources</a></li>
+  </ul>
+  <div class="nav-right">
+    <a class="nav-cta" href="#">Request a Quote</a>
+  </div>
+</nav>
+
+<!-- ══════════════════ BREADCRUMB ══════════════════════ -->
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="#">Home</a>
+  <span class="breadcrumb-sep">›</span>
+  <a href="#">Chairs</a>
+  <span class="breadcrumb-sep">›</span>
+  <a href="#">Ignition</a>
+  <span class="breadcrumb-sep">›</span>
+  <span class="breadcrumb-current">Configure</span>
+</nav>
+
+<!-- ════════════════ MAIN CONFIGURATOR ═════════════════ -->
+<main class="configurator">
+
+  <!-- ── VIEWER COLUMN ── -->
+  <section class="viewer-col">
+
+    <!-- Cylindo 360 viewer -->
+    <div class="viewer-wrap">
+      <div class="viewer-loading" id="viewerLoading">
+        <div class="spinner"></div>
+      </div>
+
+      <cylindo-viewer
+        id="honViewer"
+        customer-id="4404"
+        code="IGNITION TASK 2.0"
+        controls="ar nav indicators"
+        presentation="gallery"
+      >
+        <img
+          slot="placeholder"
+          src="https://content.cylindo.com/api/v2/4404/products/IGNITION%20TASK%202.0/frames/1/features/4-WAY%20MESH%20CHARCOAL/PLASTIC%20BLACK/STANDARD/HARD%20CASTER/A%20HEIGHT%20AND%20WIDTH%20ADJUSTABLE%20ARMS/Y2%20ADVANCED%20SYNCHRO%20TILT/MESH?size=900x675"
+          width="900"
+          height="675"
+          alt="HON Ignition Task 2.0 Chair"
+        />
+      </cylindo-viewer>
+    </div>
+  </section>
+
+  <!-- ── CONFIG PANEL ── -->
+  <aside class="config-panel">
+    <div class="config-head">
+      <div class="config-head-row">
+        <div>
+          <h1>Ignition Task 2.0</h1>
+          <p class="config-head-sub">Configure your chair below</p>
+        </div>
+        <div class="dl-wrap">
+          <button class="dl-trigger" id="dlTrigger" onclick="toggleDownloadMenu()">
+            <svg viewBox="0 0 24 24"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>
+            Download
+            <svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="dl-menu" id="dlMenu">
+            <div class="dl-menu-section">
+              <div class="dl-menu-label">Images (current config)</div>
+              <div class="dl-menu-grid">
+                <button class="dl-menu-btn" onclick="downloadFrame(1,  'Front')">Front</button>
+                <button class="dl-menu-btn" onclick="downloadFrame(4,  '45deg')">45°</button>
+                <button class="dl-menu-btn" onclick="downloadFrame(9,  'Side')">Side</button>
+                <button class="dl-menu-btn" onclick="downloadFrame(16, 'Back')">Back</button>
+              </div>
+            </div>
+            <div class="dl-menu-section">
+              <div class="dl-menu-label">3D Model</div>
+              <div class="dl-menu-grid three-col">
+                <button class="dl-menu-btn red" onclick="download3D('fbx')">FBX</button>
+                <button class="dl-menu-btn red" onclick="download3D('obj')">OBJ</button>
+                <button class="dl-menu-btn red" onclick="download3D('glb')">GLB</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-body">
+
+      <!-- ── MATERIALS section ── -->
+      <div class="section-header">
+        <span class="section-header-text">Materials &amp; Finishes</span>
+      </div>
+
+      <!-- FABRIC -->
+      <div class="accordion" id="acc-FABRIC">
+        <button class="accordion-trigger" onclick="toggleAccordion('FABRIC')">
+          <div class="accordion-trigger-left">
+            <div class="accordion-name">Fabric</div>
+            <div class="accordion-value" id="val-FABRIC">Centurion Black</div>
+          </div>
+          <span class="accordion-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="accordion-body">
+          <div class="swatch-grid" id="swatches-FABRIC"></div>
+        </div>
+      </div>
+
+      <!-- MESH -->
+      <div class="accordion" id="acc-MESH">
+        <button class="accordion-trigger" onclick="toggleAccordion('MESH')">
+          <div class="accordion-trigger-left">
+            <div class="accordion-name">Mesh</div>
+            <div class="accordion-value" id="val-MESH">4-Way Mesh Charcoal</div>
+          </div>
+          <span class="accordion-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="accordion-body">
+          <div class="swatch-grid" id="swatches-MESH"></div>
+        </div>
+      </div>
+
+      <!-- FRAME COLOR -->
+      <div class="accordion" id="acc-FRAME COLOR">
+        <button class="accordion-trigger" onclick="toggleAccordion('FRAME COLOR')">
+          <div class="accordion-trigger-left">
+            <div class="accordion-name">Frame Color</div>
+            <div class="accordion-value" id="val-FRAME COLOR">Plastic Black</div>
+          </div>
+          <span class="accordion-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="accordion-body">
+          <div class="swatch-grid" id="swatches-FRAME COLOR"></div>
+        </div>
+      </div>
+
+      <!-- LUMBAR CHOICE -->
+      <div class="accordion" id="acc-LUMBAR CHOICE">
+        <button class="accordion-trigger" onclick="toggleAccordion('LUMBAR CHOICE')">
+          <div class="accordion-trigger-left">
+            <div class="accordion-name">Lumbar</div>
+            <div class="accordion-value" id="val-LUMBAR CHOICE">No Lumbar</div>
+          </div>
+          <span class="accordion-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="accordion-body">
+          <div class="swatch-grid" id="swatches-LUMBAR CHOICE"></div>
+        </div>
+      </div>
+
+      <!-- REACTIV BACK -->
+      <div class="accordion" id="acc-REACTIV BACK">
+        <button class="accordion-trigger" onclick="toggleAccordion('REACTIV BACK')">
+          <div class="accordion-trigger-left">
+            <div class="accordion-name">Reactiv Back</div>
+            <div class="accordion-value" id="val-REACTIV BACK">Reactiv Black Plastic</div>
+          </div>
+          <span class="accordion-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="accordion-body">
+          <div class="swatch-grid" id="swatches-REACTIV BACK"></div>
+        </div>
+      </div>
+
+      <!-- ── STRUCTURE section ── -->
+      <div class="section-header" style="margin-top:4px">
+        <span class="section-header-text">Structure &amp; Function</span>
+      </div>
+
+      <!-- BACK -->
+      <div class="accordion" id="acc-BACK">
+        <button class="accordion-trigger" onclick="toggleAccordion('BACK')">
+          <div class="accordion-trigger-left">
+            <div class="accordion-name">Back Type</div>
+            <div class="accordion-value" id="val-BACK">Mesh</div>
+          </div>
+          <span class="accordion-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="accordion-body">
+          <div class="thumb-grid" id="thumbs-BACK"></div>
+        </div>
+      </div>
+
+      <!-- BASE TYPE -->
+      <div class="accordion" id="acc-BASE TYPE">
+        <button class="accordion-trigger" onclick="toggleAccordion('BASE TYPE')">
+          <div class="accordion-trigger-left">
+            <div class="accordion-name">Base Type</div>
+            <div class="accordion-value" id="val-BASE TYPE">Standard</div>
+          </div>
+          <span class="accordion-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="accordion-body">
+          <div class="thumb-grid" id="thumbs-BASE TYPE"></div>
+        </div>
+      </div>
+
+      <!-- CASTER -->
+      <div class="accordion" id="acc-CASTER">
+        <button class="accordion-trigger" onclick="toggleAccordion('CASTER')">
+          <div class="accordion-trigger-left">
+            <div class="accordion-name">Caster</div>
+            <div class="accordion-value" id="val-CASTER">Hard Caster</div>
+          </div>
+          <span class="accordion-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="accordion-body">
+          <div class="thumb-grid" id="thumbs-CASTER"></div>
+        </div>
+      </div>
+
+      <!-- ARM -->
+      <div class="accordion" id="acc-ARM">
+        <button class="accordion-trigger" onclick="toggleAccordion('ARM')">
+          <div class="accordion-trigger-left">
+            <div class="accordion-name">Arms</div>
+            <div class="accordion-value" id="val-ARM">Height &amp; Width Adjustable</div>
+          </div>
+          <span class="accordion-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="accordion-body">
+          <div class="thumb-grid" id="thumbs-ARM"></div>
+        </div>
+      </div>
+
+      <!-- CONTROL -->
+      <div class="accordion" id="acc-CONTROL">
+        <button class="accordion-trigger" onclick="toggleAccordion('CONTROL')">
+          <div class="accordion-trigger-left">
+            <div class="accordion-name">Control Mechanism</div>
+            <div class="accordion-value" id="val-CONTROL">Y2 Advanced Synchro Tilt</div>
+          </div>
+          <span class="accordion-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="accordion-body">
+          <div class="thumb-grid" id="thumbs-CONTROL"></div>
+        </div>
+      </div>
+
+    </div><!-- /config-body -->
+
+    <!-- Footer CTAs -->
+    <div class="config-footer">
+      <button class="btn-primary">Request a Quote</button>
+      <button class="btn-outline">Find a Dealer</button>
+    </div>
+  </aside>
+
+</main>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════ JAVASCRIPT ════════════════════ -->
+<script>
+/* ── Data ───────────────────────────────────────────────────── */
+
+const CUSTOMER_ID = 4404;
+const PRODUCT_CODE = 'IGNITION TASK 2.0';
+const ENCODED_PRODUCT = encodeURIComponent(PRODUCT_CODE);
+
+// Default selections
+const state = {
+  'FABRIC':       'CENTURION BLACK',
+  'MESH':         '4-WAY MESH CHARCOAL',
+  'FRAME COLOR':  'PLASTIC BLACK',
+  'LUMBAR CHOICE':'NO LUMBAR',
+  'REACTIV BACK': 'REACTIV BLACK PLASTIC',
+  'BACK':         'MESH',
+  'BASE TYPE':    'STANDARD',
+  'CASTER':       'HARD CASTER',
+  'ARM':          'A HEIGHT AND WIDTH ADJUSTABLE ARMS',
+  'CONTROL':      'Y2 ADVANCED SYNCHRO TILT',
+};
+
+/* ── Swatch color data ──────────────────────────────────────── */
+const FABRIC_OPTIONS = [
+  { code: 'CENTURION APRICOT',   label: 'Apricot',    color: '#E8956A' },
+  { code: 'CENTURION BLACK',     label: 'Black',       color: '#1a1a1a' },
+  { code: 'CENTURION FOG',       label: 'Fog',         color: '#B8B8B2' },
+  { code: 'CENTURION IRON-ONE',  label: 'Iron',        color: '#5C5C5A' },
+  { code: 'CENTURION PEACOCK',   label: 'Peacock',     color: '#2E7D8C' },
+  { code: 'CENTURION PEAR',      label: 'Pear',        color: '#8DB47A' },
+  { code: 'COUNTURETT BEACH',    label: 'Beach',       color: '#D4B896' },
+  { code: 'COUNTURETT BLACK',    label: 'Black',       color: '#1a1a1a', pattern: 'weave' },
+  { code: 'COUNTURETT GRAPHITE', label: 'Graphite',    color: '#4A4A46' },
+  { code: 'COUNTURETT LUGGAGE',  label: 'Luggage',     color: '#8B6E4E' },
+  { code: 'COUNTURETT RED',      label: 'Red',         color: '#C01E3A' },
+  { code: 'RUSH ANCHOR',         label: 'Anchor',      color: '#7A7A78' },
+  { code: 'RUSH BLUEBERRY',      label: 'Blueberry',   color: '#3B3B7A' },
+  { code: 'RUSH CHERRYPIE',      label: 'Cherrypie',   color: '#8B1A2E' },
+  { code: 'RUSH SOOT',           label: 'Soot',        color: '#2A2A28' },
+  { code: 'RUSH SUNSHINE',       label: 'Sunshine',    color: '#D4AA00' },
+];
+
+const MESH_OPTIONS = [
+  { code: '4-WAY MESH BLACK',       label: 'Black',      color: '#1a1a1a',  tag: '4-Way' },
+  { code: '4-WAY MESH BREEZE',      label: 'Breeze',     color: '#7BA7BC',  tag: '4-Way' },
+  { code: '4-WAY MESH CHARCOAL',    label: 'Charcoal',   color: '#3A3A38',  tag: '4-Way' },
+  { code: '4-WAY MESH FOG',         label: 'Fog',        color: '#B8B8B2',  tag: '4-Way' },
+  { code: '4-WAY MESH REGATTA',     label: 'Regatta',    color: '#1A3A6B',  tag: '4-Way' },
+  { code: '4-WAY MESH TITANIUM',    label: 'Titanium',   color: '#6B7075',  tag: '4-Way' },
+  { code: 'SPECTRUM MESH BEACON',   label: 'Beacon',     color: '#3D7AB5',  tag: 'Spec' },
+  { code: 'SPECTRUM MESH BRICK',    label: 'Brick',      color: '#8B3A2A',  tag: 'Spec' },
+  { code: 'SPECTRUM MESH BULLSEYE', label: 'Bullseye',   color: '#C41E3A',  tag: 'Spec' },
+  { code: 'SPECTRUM MESH CHALK',    label: 'Chalk',      color: '#E2E2DA',  tag: 'Spec' },
+  { code: 'SPECTRUM MESH GOLDDUST', label: 'Golddust',   color: '#C8A800',  tag: 'Spec' },
+  { code: 'SPECTRUM MESH KERMIT',   label: 'Kermit',     color: '#4A8B3A',  tag: 'Spec' },
+  { code: 'SPECTRUM MESH LOFT',     label: 'Loft',       color: '#7A6B8B',  tag: 'Spec' },
+];
+
+const FRAME_COLOR_OPTIONS = [
+  { code: 'PLASTIC BLACK',          label: 'Black',       color: '#1a1a1a' },
+  { code: 'PLASTIC DESIGNER WHITE', label: 'Designer\nWhite', color: '#F0EEE8', border: '#ddd' },
+  { code: 'PLASTIC TITANIUM',       label: 'Titanium',    color: '#6B7075' },
+];
+
+const LUMBAR_OPTIONS = [
+  { code: 'NO LUMBAR',              label: 'None',        color: '#e8e8e8', noIcon: true },
+  { code: 'PLASTIC BLACK',          label: 'Black',       color: '#1a1a1a' },
+  { code: 'PLASTIC BULLSEYE',       label: 'Bullseye',    color: '#C41E3A' },
+  { code: 'PLASTIC DESIGNER WHITE', label: 'White',       color: '#F0EEE8', border: '#ddd' },
+  { code: 'PLASTIC EMBER',          label: 'Ember',       color: '#E8630A' },
+  { code: 'PLASTIC IRIS',           label: 'Iris',        color: '#5B2D8E' },
+  { code: 'PLASTIC KRYPTON',        label: 'Krypton',     color: '#2FB62F' },
+  { code: 'PLASTIC REGATTA',        label: 'Regatta',     color: '#1A3A6B' },
+  { code: 'PLASTIC TITANIUM',       label: 'Titanium',    color: '#6B7075' },
+];
+
+const REACTIV_BACK_OPTIONS = [
+  { code: 'REACTIV BLACK PLASTIC',   label: 'Black',    color: '#1a1a1a' },
+  { code: 'REACTIV DESIGNER WHITE',  label: 'White',    color: '#F0EEE8', border: '#ddd' },
+  { code: 'REACTIV PLASTIC TITANIUM',label: 'Titanium', color: '#6B7075' },
+];
+
+/* ── Thumbnail structural options ───────────────────────────── */
+const BACK_OPTIONS = [
+  { code: 'MESH',    label: 'Mesh Back' },
+  { code: 'REACTIV', label: 'Reactiv Back' },
+];
+
+const BASE_OPTIONS = [
+  { code: 'STANDARD',          label: 'Standard Base' },
+  { code: 'POLISHED ALUMINUM', label: 'Polished Aluminum' },
+];
+
+const CASTER_OPTIONS = [
+  { code: 'HARD CASTER',               label: 'Hard Caster' },
+  { code: 'TITANIUM ALL SURFACE CASTER',label: 'Titanium All-Surface' },
+];
+
+const ARM_OPTIONS = [
+  { code: 'N ARMLESS',                         label: 'Armless' },
+  { code: 'F FIXED ARMS',                      label: 'Fixed Arms' },
+  { code: 'A HEIGHT AND WIDTH ADJUSTABLE ARMS', label: 'H&W Adjustable' },
+  { code: 'V ALL ADJUSTABLE ARMS',              label: 'Fully Adjustable' },
+];
+
+const CONTROL_OPTIONS = [
+  { code: 'Y0 SYNCHRO TILT',                            label: 'Synchro Tilt' },
+  { code: 'Y1 SYNCHRO TILT WITH SEAT SLIDER',           label: 'Synchro + Seat Slider' },
+  { code: 'Y2 ADVANCED SYNCHRO TILT',                   label: 'Advanced Synchro' },
+  { code: 'Y3 SYNCHRO TILT WITH INDEPENDENT BACK ANGLE',label: 'Ind. Back Angle' },
+];
+
+/* ── Helpers ────────────────────────────────────────────────── */
+const checkSVG = `<svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg>`;
+
+function buildFeatureParams() {
+  return Object.entries(state)
+    .filter(([, v]) => v)
+    .map(([group, option]) => `feature=${encodeURIComponent(group)}:${encodeURIComponent(option)}`)
+    .join('&');
+}
+
+function cylFeatureURL(frame, groupCode, optionCode, size = 400) {
+  const base = `https://content.cylindo.com/api/v2/${CUSTOMER_ID}/products/${ENCODED_PRODUCT}/frames/${frame}/chair.png`;
+  const f = `feature=${encodeURIComponent(groupCode)}:${encodeURIComponent(optionCode)}`;
+  return `${base}?${f}&size=${size}`;
+}
+
+function cylAllFeaturesURL(frame, size = 1024) {
+  const base = `https://content.cylindo.com/api/v2/${CUSTOMER_ID}/products/${ENCODED_PRODUCT}/frames/${frame}/chair.png`;
+  return `${base}?${buildFeatureParams()}&size=${size}`;
+}
+
+/* ── Build swatch grid ──────────────────────────────────────── */
+function buildSwatches(groupCode, options, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+
+  options.forEach(opt => {
+    const isSelected = state[groupCode] === opt.code;
+    const item = document.createElement('div');
+    item.className = 'swatch-item' + (isSelected ? ' selected' : '');
+    item.dataset.group = groupCode;
+    item.dataset.code = opt.code;
+    item.title = opt.code;
+
+    const borderStyle = opt.border ? `border: 1px solid ${opt.border};` : '';
+    const noStyle = opt.noIcon
+      ? `background: ${opt.color}; display:flex; align-items:center; justify-content:center;`
+      : `background: ${opt.color};`;
+
+    item.innerHTML = `
+      <div class="swatch-square" style="${borderStyle}">
+        <div style="width:100%;height:100%;${noStyle}">
+          ${opt.noIcon ? `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#aaa" stroke-width="1.5"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>` : ''}
+        </div>
+        <div class="swatch-check">${checkSVG}</div>
+      </div>
+      <span class="swatch-label">${opt.label}</span>
+    `;
+
+    item.addEventListener('click', () => selectOption(groupCode, opt.code, opt.label, item));
+    container.appendChild(item);
+  });
+}
+
+/* ── Build thumbnail grid ───────────────────────────────────── */
+function buildThumbs(groupCode, options, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+
+  options.forEach(opt => {
+    const isSelected = state[groupCode] === opt.code;
+    const item = document.createElement('div');
+    item.className = 'thumb-item' + (isSelected ? ' selected' : '');
+    item.dataset.group = groupCode;
+    item.dataset.code = opt.code;
+    item.title = opt.code;
+
+    const imgUrl = cylFeatureURL(4, groupCode, opt.code, 240);
+
+    item.innerHTML = `
+      <div class="thumb-selected-badge">${checkSVG}</div>
+      <img class="thumb-img"
+        src="${imgUrl}"
+        alt="${opt.label}"
+        loading="lazy"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+      />
+      <div class="thumb-img-placeholder" style="display:none">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#ccc" stroke-width="1.5">
+          <rect x="4" y="4" width="24" height="24" rx="2"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M4 22 l7-7 5 5 4-4 8 8"/>
+        </svg>
+      </div>
+      <div class="thumb-label">${opt.label}</div>
+    `;
+
+    item.addEventListener('click', () => selectOption(groupCode, opt.code, opt.label, item));
+    container.appendChild(item);
+  });
+}
+
+/* ── Select an option ───────────────────────────────────────── */
+function selectOption(groupCode, code, label, el) {
+  state[groupCode] = code;
+
+  // Update sibling selection state
+  const container = el.parentElement;
+  container.querySelectorAll('.swatch-item, .thumb-item').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+
+  // Update accordion label
+  const valEl = document.getElementById('val-' + groupCode);
+  if (valEl) valEl.textContent = label || toTitleCase(code);
+
+  updateConditionalVisibility();
+  updateViewer();
+}
+
+/* ── Conditional feature visibility ────────────────────────── */
+function updateConditionalVisibility() {
+  const backType = state['BACK'];
+  const meshAcc    = document.getElementById('acc-MESH');
+  const reactivAcc = document.getElementById('acc-REACTIV BACK');
+
+  const showMesh    = backType === 'MESH';
+  const showReactiv = backType === 'REACTIV';
+
+  if (meshAcc) {
+    meshAcc.style.display = showMesh ? '' : 'none';
+    if (!showMesh) meshAcc.classList.remove('open');
+  }
+  if (reactivAcc) {
+    reactivAcc.style.display = showReactiv ? '' : 'none';
+    if (!showReactiv) reactivAcc.classList.remove('open');
+  }
+}
+
+function toTitleCase(str) {
+  return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/* ── Update Cylindo viewer ──────────────────────────────────── */
+function updateViewer() {
+  const viewer = document.getElementById('honViewer');
+  if (!viewer) return;
+
+  // Build features as object (Cylindo v1 web component format)
+  const featuresObj = {};
+  Object.entries(state).forEach(([group, option]) => {
+    if (option) featuresObj[group] = option;
+  });
+
+  try {
+    viewer.features = featuresObj;
+  } catch (e) {
+    // Fallback: try array format
+    try {
+      viewer.features = Object.values(state).filter(Boolean);
+    } catch (e2) {
+      console.warn('Could not set viewer features:', e2);
+    }
+  }
+}
+
+/* ── Accordion toggle ───────────────────────────────────────── */
+function toggleAccordion(id) {
+  const el = document.getElementById('acc-' + id);
+  if (!el) return;
+  const isOpen = el.classList.contains('open');
+
+  // Close all
+  document.querySelectorAll('.accordion.open').forEach(a => a.classList.remove('open'));
+
+  // Toggle current
+  if (!isOpen) el.classList.add('open');
+}
+
+/* ── Download dropdown toggle ───────────────────────────────── */
+function toggleDownloadMenu() {
+  const menu    = document.getElementById('dlMenu');
+  const trigger = document.getElementById('dlTrigger');
+  const isOpen  = menu.classList.contains('open');
+  menu.classList.toggle('open', !isOpen);
+  trigger.classList.toggle('open', !isOpen);
+}
+
+document.addEventListener('click', e => {
+  const wrap = document.querySelector('.dl-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('dlMenu').classList.remove('open');
+    document.getElementById('dlTrigger').classList.remove('open');
+  }
+});
+
+/* ── Toast ──────────────────────────────────────────────────── */
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ── Image download — opens the Cylindo URL in a new tab ────── */
+function downloadFrame(frameNum, angleName) {
+  const url = cylAllFeaturesURL(frameNum);
+  window.open(url, '_blank');
+  showToast(`${angleName} image opened (1024px) — press Ctrl+S / ⌘S to save`);
+  // Close the dropdown
+  document.getElementById('dlMenu').classList.remove('open');
+  document.getElementById('dlTrigger').classList.remove('open');
+}
+
+/* ── 3D download ─────────────────────────────────────────────── */
+function download3D(format) {
+  const base = `https://content.cylindo.com/api/v2/${CUSTOMER_ID}/products/${ENCODED_PRODUCT}/AR/${ENCODED_PRODUCT}.${format}`;
+  const url = `${base}?${buildFeatureParams()}`;
+  window.open(url, '_blank');
+  showToast(`${format.toUpperCase()} file requested`);
+  document.getElementById('dlMenu').classList.remove('open');
+  document.getElementById('dlTrigger').classList.remove('open');
+}
+
+/* ── Viewer loaded event ────────────────────────────────────── */
+function onViewerLoaded() {
+  document.getElementById('viewerLoading').classList.add('hidden');
+  updateViewer();
+}
+
+/* ── Init ───────────────────────────────────────────────────── */
+function init() {
+  // Build swatch grids
+  buildSwatches('FABRIC',       FABRIC_OPTIONS,       'swatches-FABRIC');
+  buildSwatches('MESH',         MESH_OPTIONS,         'swatches-MESH');
+  buildSwatches('FRAME COLOR',  FRAME_COLOR_OPTIONS,  'swatches-FRAME COLOR');
+  buildSwatches('LUMBAR CHOICE',LUMBAR_OPTIONS,       'swatches-LUMBAR CHOICE');
+  buildSwatches('REACTIV BACK', REACTIV_BACK_OPTIONS, 'swatches-REACTIV BACK');
+
+  // Build thumbnail grids
+  buildThumbs('BACK',      BACK_OPTIONS,    'thumbs-BACK');
+  buildThumbs('BASE TYPE', BASE_OPTIONS,    'thumbs-BASE TYPE');
+  buildThumbs('CASTER',    CASTER_OPTIONS,  'thumbs-CASTER');
+  buildThumbs('ARM',       ARM_OPTIONS,     'thumbs-ARM');
+  buildThumbs('CONTROL',   CONTROL_OPTIONS, 'thumbs-CONTROL');
+
+  // Apply conditional visibility based on default state
+  updateConditionalVisibility();
+
+  // Open first accordion
+  toggleAccordion('FABRIC');
+
+  // Hook viewer events
+  const viewer = document.getElementById('honViewer');
+  if (viewer) {
+    viewer.addEventListener('loaded', onViewerLoaded);
+    // Safety timeout in case event doesn't fire
+    setTimeout(() => onViewerLoaded(), 5000);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
