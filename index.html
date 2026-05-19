@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="preconnect" href="https://content.cylindo.com" crossorigin />
   <script type="module" src="https://viewer-cdn.cylindo.com/v1/index.mjs" async></script>
+  <script type="module" src="https://viewer-cdn.cylindo.com/v1/bar.mjs" async></script>
 
   <style>
     /* ── Design tokens ───────────────────────────────────────── */
@@ -707,13 +708,14 @@
       <cylindo-viewer
         id="honViewer"
         remote-config="HNI_DEMO"
-        controls="ar nav indicators"
+        controls="ar nav"
       >
         <img
           slot="placeholder"
           src="https://content.cylindo.com/api/v2/4404/products/IGNITION%20TASK%202.0/default/HNI_DEMO/placeholder.webp?size=768"
           alt="HON Ignition Task 2.0 Chair"
         />
+        <cylindo-thumbnail-bar></cylindo-thumbnail-bar>
       </cylindo-viewer>
     </div>
   </section>
