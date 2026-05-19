@@ -1270,10 +1270,36 @@ function download3D(format) {
   document.getElementById('dlTrigger').classList.remove('open');
 }
 
+/* ── Zoom: enable on 3D model, disable on 360 ───────────────── */
+function syncZoomToItem() {
+  const viewer = document.getElementById('honViewer');
+  if (!viewer) return;
+
+  // viewer.item has an index; viewer.items is the full array
+  const idx = viewer.item?.index ?? viewer.item;
+  const items = viewer.items || [];
+  const current = idx != null ? items[idx] : null;
+  const isModel = current?.type === 'model' || !!viewer.modelViewer;
+
+  const controls = (viewer.getAttribute('controls') || '').split(/\s+/).filter(Boolean);
+
+  if (isModel) {
+    if (!controls.includes('zoom')) {
+      viewer.setAttribute('controls', [...controls, 'zoom'].join(' '));
+    }
+    // Ensure the underlying Google model-viewer has zoom enabled
+    const mv = viewer.modelViewer;
+    if (mv) mv.removeAttribute('disable-zoom');
+  } else {
+    viewer.setAttribute('controls', controls.filter(c => c !== 'zoom').join(' '));
+  }
+}
+
 /* ── Viewer loaded event ────────────────────────────────────── */
 function onViewerLoaded() {
   document.getElementById('viewerLoading').classList.add('hidden');
   updateViewer();
+  syncZoomToItem();
 }
 
 /* ── Init ───────────────────────────────────────────────────── */
@@ -1302,6 +1328,7 @@ function init() {
   const viewer = document.getElementById('honViewer');
   if (viewer) {
     viewer.addEventListener('loaded', onViewerLoaded);
+    viewer.addEventListener('item-change', syncZoomToItem);
     // Safety timeout in case event doesn't fire
     setTimeout(() => onViewerLoaded(), 5000);
   }
